@@ -36,6 +36,9 @@ to quickly create a Cobra application.`,
 		fmt.Println("construct called")
 
 		// Get DB
+		db := engine.GetDB()
+		// db.Clear()
+		fmt.Println(db)
 
 		// Parse page
 		url := "https://www.austinpetsalive.org/"
@@ -43,6 +46,7 @@ to quickly create a Cobra application.`,
 		idx.Start(url)
 
 		// Save data
+		db.SaveIndex(idx)
 
 	},
 }

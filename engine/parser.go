@@ -7,14 +7,16 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
+	"sync"
 	"unicode"
 
 	"golang.org/x/net/html"
 )
 
 const (
-	maxDepth int = 3
+	maxDepth int = 2
 )
 
 var blacklist = []string{
@@ -29,6 +31,7 @@ type PageParser struct {
 	url   *url.URL
 	links []string
 	depth int // Depth of parser
+	wg    sync.WaitGroup
 }
 
 func NewPageParser(uri string, depth int) *PageParser {
@@ -81,8 +84,6 @@ func (v *PageParser) fetchPage(uri string) ([]byte, error) {
 		panic(err)
 	}
 
-	_ = ioutil.WriteFile("asdf.html", body, 0644)
-
 	return body, nil
 }
 
@@ -95,17 +96,22 @@ func (v *PageParser) parseNode(n *html.Node) {
 					if v.depth < maxDepth {
 						v.addLink(a.Val)
 					}
-					break
+					return
 				}
 			}
 		} else if n.Data == "title" {
 			if n.FirstChild != nil {
-				v.title = n.FirstChild.Data
+				title := strings.ReplaceAll(n.FirstChild.Data, "\n", "")
+				title = strings.TrimSpace(title)
+				v.title = title
 			} else {
 				v.title = v.url.String()
 			}
 		}
 	case html.TextNode:
+		// if strings.Contains(n.Data, "http://enable-javascript.com/") {
+
+		// }
 		v.addData(n.Data)
 	}
 
@@ -115,6 +121,7 @@ func (v *PageParser) parseNode(n *html.Node) {
 				continue
 			}
 		}
+
 		v.parseNode(c)
 	}
 }
@@ -135,9 +142,15 @@ func (v *PageParser) addLink(link string) {
 	}
 
 	vLinks := getVisitedLinks()
+
 	added := vLinks.AddLink(newURL.String())
 	if added {
-		v.links = append(v.links, newURL.String())
+		linkChannel := getLinkChannel()
+		cl := contextualLink{
+			link:  newURL.String(),
+			depth: v.depth + 1,
+		}
+		linkChannel <- cl
 	}
 
 }
@@ -147,12 +160,22 @@ func (v *PageParser) addData(data string) {
 
 	for _, w := range words {
 		w = strings.ToLower(w)
-		l := rune(w[0])
-		if unicode.IsLetter(l) || unicode.IsNumber(l) {
-			if _, ok := v.data[w]; ok {
-				v.data[w]++
-			} else {
-				v.data[w] = 1
+		reg, err := regexp.Compile("[^a-z]+")
+		if err != nil {
+			log.Fatal(err)
+		}
+		w := reg.ReplaceAllString(w, "")
+
+		if len(w) > 0 {
+			l := rune(w[0])
+
+			// Needs to start with letter
+			if unicode.IsLetter(l) {
+				if _, ok := v.data[w]; ok {
+					v.data[w]++
+				} else {
+					v.data[w] = 1
+				}
 			}
 		}
 	}

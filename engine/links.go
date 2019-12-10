@@ -33,12 +33,17 @@ func getVisitedLinks() *linksSingleton {
 	return visitedLinksSingleton
 }
 
-var linkChannelSingleton chan string
+type contextualLink struct {
+	link  string
+	depth int
+}
+
+var linkChannelSingleton chan contextualLink
 var linkChannelOnce sync.Once
 
-func getLinkChannel() chan string {
+func getLinkChannel() chan contextualLink {
 	linkChannelOnce.Do(func() {
-		linkChannelSingleton = make(chan string)
+		linkChannelSingleton = make(chan contextualLink)
 	})
 	return linkChannelSingleton
 }
