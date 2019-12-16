@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	maxDepth int = 2
+	maxDepth      int = 3
+	maxTermLength int = 255
 )
 
 var blacklist = []string{
@@ -70,12 +71,7 @@ func (v *PageParser) parsePage() {
 func (v *PageParser) fetchPage(uri string) ([]byte, error) {
 	resp, err := http.Get(uri)
 	if err != nil {
-		if strings.Contains(err.Error(), "x509: certificate") {
-			return nil, err
-		}
-		fmt.Println("ERROR")
-		fmt.Println(uri)
-		panic(err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -159,6 +155,9 @@ func (v *PageParser) addData(data string) {
 	words := strings.Fields(data)
 
 	for _, w := range words {
+		if len(w) > maxTermLength {
+			continue
+		}
 		w = strings.ToLower(w)
 		reg, err := regexp.Compile("[^a-z]+")
 		if err != nil {

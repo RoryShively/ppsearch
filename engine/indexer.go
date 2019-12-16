@@ -25,7 +25,7 @@ func (v *Indexer) Start(url string) {
 func (v *Indexer) parsePage(url string, depth int) {
 	var wg sync.WaitGroup
 	linkChannel := getLinkChannel()
-	done := make(chan int)
+	done := make(chan bool)
 
 	go func() {
 		for {
@@ -51,21 +51,7 @@ func (v *Indexer) parsePage(url string, depth int) {
 	linkChannel <- cl
 
 	wg.Wait()
-	done <- 0
-
-	// pp := NewPageParser(url, depth)
-	// v.pages = append(v.pages, pp)
-	// pp.Start()
-
-	// var wg sync.WaitGroup
-	// for _, link := range pp.links {
-	// 	wg.Add(1)
-	// 	go func(l string) {
-	// 		v.parsePage(l, depth+1)
-	// 		wg.Done()
-	// 	}(link)
-	// }
-	// wg.Wait()
+	done <- true
 }
 
 func (v *Indexer) GetPages() []*PageParser {

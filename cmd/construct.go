@@ -16,7 +16,9 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/RoryShively/ppsearch/engine"
 	"github.com/spf13/cobra"
@@ -32,16 +34,25 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("requires a url to construct index")
+		}
+		if len(args) > 1 {
+			return errors.New("too many urls entered into search")
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("construct called")
-
 		// Get DB
 		db := engine.GetDB()
 		// db.Clear()
-		fmt.Println(db)
 
 		// Parse page
-		url := "https://www.austinpetsalive.org/"
+		url := args[0]
+		if !strings.HasPrefix(url, "http") {
+			url = fmt.Sprintf("http://%v", url)
+		}
 		idx := engine.NewIndexer()
 		idx.Start(url)
 
