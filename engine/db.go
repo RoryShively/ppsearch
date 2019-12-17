@@ -97,6 +97,7 @@ func (v *DB) Find(term string) *Results {
 		count := int(countI32)
 
 		page, found := v.FindPage(url)
+		fmt.Println(page)
 		if found {
 			r := &Result{
 				url:   url,
@@ -121,9 +122,10 @@ func (v *DB) FindPage(url string) (map[string]string, bool) {
 	for scanner.Scan() {
 		row := scanner.Text()
 		col := strings.Split(row, " ")
+
 		item := map[string]string{
 			"url":   string(col[0]),
-			"title": string(col[1]),
+			"title": strings.Join(col[1:], " "),
 		}
 
 		if url == item["url"] {
