@@ -97,7 +97,6 @@ func (v *DB) Find(term string) *Results {
 		count := int(countI32)
 
 		page, found := v.FindPage(url)
-		fmt.Println(page)
 		if found {
 			r := &Result{
 				url:   url,
